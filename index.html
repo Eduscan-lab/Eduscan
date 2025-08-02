@@ -3,236 +3,335 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Student Attendance System</title>
+  <title>Student Time In/Out System</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container {
+    background: white;
+    padding: 20px;
+    max-width: 500px;
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  h2, h3 {
+    text-align: center;
+    margin: 0 0 10px 0;
+  }
+  input, select, button {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+  button {
+    background: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #45a049;
+  }
+  #qrCode {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+  #qrCode canvas {
+    max-width: 100%;
+    height: auto;
+  }
+  #scanner {
+    width: 100%;
+    margin-top: 20px;
+  }
+  #logsList div {
+    background: #eee;
+    margin: 5px 0;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  @media (max-width: 600px) {
     .container {
-      background: white;
-      padding: 20px;
-      max-width: 500px;
-      width: 100%;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    h2, h3 {
-      text-align: center;
-      margin: 0 0 10px 0;
+      padding: 15px;
     }
     input, select, button {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 1rem;
+      font-size: 0.95rem;
     }
-    button {
-      background: #4CAF50;
-      color: white;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    button:hover { background: #45a049; }
-    #scanner { width: 100%; margin-top: 20px; }
     #logsList div {
-      background: #eee;
-      margin: 5px 0;
-      padding: 8px;
-      border-radius: 4px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
-    @media (max-width: 600px) {
-      .container { padding: 15px; }
-      input, select, button { font-size: 0.95rem; }
-      #logsList div { font-size: 0.85rem; }
+  }
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container {
+    background: white;
+    padding: 20px;
+    max-width: 500px;
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  h2, h3 {
+    text-align: center;
+    margin: 0 0 10px 0;
+  }
+  input, select, button {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+  button {
+    background: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #45a049;
+  }
+  #qrCode {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+  #qrCode canvas {
+    max-width: 100%;
+    height: auto;
+  }
+  #scanner {
+    width: 100%;
+    margin-top: 20px;
+  }
+  #logsList div {
+    background: #eee;
+    margin: 5px 0;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  @media (max-width: 600px) {
+    .container {
+      padding: 15px;
     }
-  </style>
+    input, select, button {
+      font-size: 0.95rem;
+    }
+    #logsList div {
+      font-size: 0.85rem;
+    }
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h2>Student Attendance System</h2>
-    <div id="authSection">
-      <h3>Register</h3>
-      <input id="regName" placeholder="Full Name">
-      <select id="regGrade">
-        <option disabled selected>Grade</option>
-        <option>11</option>
-        <option>12</option>
-      </select>
-      <select id="regStrand">
-        <option disabled selected>Strand</option>
-        <option>STEM</option>
-        <option>ABM</option>
-        <option>HUMSS</option>
-        <option>GAS</option>
-        <option>ICT</option>
-        <option>HE</option>
-      </select>
-      <input id="regUser" placeholder="Username">
-      <input id="regPass" placeholder="Password" type="password">
-      <select id="regRole">
-        <option value="student">Student</option>
-        <option value="admin">Admin</option>
-      </select>
-      <button onclick="register()">Register</button>
-
-      <h3>Login</h3>
-      <input id="loginUser" placeholder="Username">
-      <input id="loginPass" placeholder="Password" type="password">
-      <button onclick="login()">Login</button>
-    </div>
-
-    <div id="studentSection" style="display:none">
-      <h3>Welcome, <span id="studentName"></span></h3>
-      <p>Grade: <span id="studentGrade"></span></p>
-      <p>Strand: <span id="studentStrand"></span></p>
-      <button onclick="studentTime('in')">Time In</button>
-      <button onclick="studentTime('out')">Time Out</button>
-      <button onclick="logout()">Logout</button>
-    </div>
-
-    <div id="adminSection" style="display:none">
-      <h3>Admin Panel</h3>
-      <div id="qrCode"></div>
-      <div id="scanner"></div>
-      <h4>Logs</h4>
-      <div id="logsList"></div>
-      <button onclick="logout()">Logout</button>
-    </div>
+  <div class="container" id="loginContainer">
+    <h2>Login</h2>
+    <input type="text" id="loginUsername" placeholder="Username" />
+    <input type="password" id="loginPassword" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <p>or <a href="#" onclick="showRegister()">Register here</a></p>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <div class="container" id="registerContainer" style="display: none">
+    <h2>Register</h2>
+    <input type="text" id="regName" placeholder="Full Name" />
+    <input type="text" id="regUsername" placeholder="Username" />
+    <input type="password" id="regPassword" placeholder="Password" />
+    <select id="regGrade">
+      <option value="Grade 11">Grade 11</option>
+      <option value="Grade 12">Grade 12</option>
+    </select>
+    <select id="regStrand">
+      <option value="STEM">STEM</option>
+      <option value="ABM">ABM</option>
+      <option value="HUMSS">HUMSS</option>
+      <option value="GAS">GAS</option>
+      <option value="ICT">ICT</option>
+      <option value="HE">HE</option>
+    </select>
+    <button onclick="register()">Register</button>
+    <p><a href="#" onclick="showLogin()">Back to Login</a></p>
+  </div>
+
+  <div class="container" id="adminContainer" style="display: none">
+    <h2>Admin Panel</h2>
+    <button onclick="startScanner()">Start QR Scanner</button>
+    <div id="qr-reader" style="width:100%"></div>
+    <h3>Logs</h3>
+    <table id="logTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Strand</th>
+          <th>Grade</th>
+          <th>Time</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="logBody"></tbody>
+    </table>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="container" id="studentContainer" style="display: none">
+    <h2>Welcome, Student</h2>
+    <p id="studentInfo"></p>
+    <p>To time in/out, please scan the admin QR.</p>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script>
-    const authSection = document.getElementById("authSection");
-    const studentSection = document.getElementById("studentSection");
-    const adminSection = document.getElementById("adminSection");
-    const qrCodeDiv = document.getElementById("qrCode");
-    const logsList = document.getElementById("logsList");
-    let currentUser = null;
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const logs = JSON.parse(localStorage.getItem("logs") || "[]");
 
-    function register() {
-      const name = document.getElementById("regName").value;
-      const grade = document.getElementById("regGrade").value;
-      const strand = document.getElementById("regStrand").value;
-      const username = document.getElementById("regUser").value;
-      const password = document.getElementById("regPass").value;
-      const role = document.getElementById("regRole").value;
-
-      if (!name || !grade || !strand || !username || !password || !role) return alert("Please fill all fields");
-
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      if (users.find(u => u.username === username)) return alert("Username already exists");
-
-      const user = { name, grade, strand, username, password, role };
-      users.push(user);
+    function saveData() {
       localStorage.setItem("users", JSON.stringify(users));
-      alert("Registered successfully");
+      localStorage.setItem("logs", JSON.stringify(logs));
     }
 
-    function login() {
-      const username = document.getElementById("loginUser").value;
-      const password = document.getElementById("loginPass").value;
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const user = users.find(u => u.username === username && u.password === password);
+    function showLogin() {
+      document.getElementById("loginContainer").style.display = "block";
+      document.getElementById("registerContainer").style.display = "none";
+    }
 
-      if (!user) return alert("Invalid credentials");
+    function showRegister() {
+      document.getElementById("loginContainer").style.display = "none";
+      document.getElementById("registerContainer").style.display = "block";
+    }
 
-      currentUser = user;
-      localStorage.setItem("currentUser", JSON.stringify(user));
-      authSection.style.display = "none";
-      if (user.role === "student") showStudent(user);
-      else showAdmin(user);
+    function showAdmin() {
+      document.getElementById("loginContainer").style.display = "none";
+      document.getElementById("adminContainer").style.display = "block";
+      document.getElementById("registerContainer").style.display = "none";
+      updateLogs();
     }
 
     function showStudent(user) {
-      studentSection.style.display = "block";
-      document.getElementById("studentName").textContent = user.name;
-      document.getElementById("studentGrade").textContent = user.grade;
-      document.getElementById("studentStrand").textContent = user.strand;
+      document.getElementById("loginContainer").style.display = "none";
+      document.getElementById("studentContainer").style.display = "block";
+      document.getElementById("studentInfo").innerText = `${user.name} - ${user.strand} - ${user.grade}`;
     }
 
-    function showAdmin(user) {
-      adminSection.style.display = "block";
-      qrCodeDiv.innerHTML = "";
-      QRCode.toCanvas(document.createElement("canvas"), user.username, function(err, canvas) {
-        if (!err) qrCodeDiv.appendChild(canvas);
-      });
-      loadLogs();
-      startScanner();
+    function register() {
+      const name = document.getElementById("regName").value;
+      const username = document.getElementById("regUsername").value;
+      const password = document.getElementById("regPassword").value;
+      const strand = document.getElementById("regStrand").value;
+      const grade = document.getElementById("regGrade").value;
+      if (!name || !username || !password) return alert("Complete all fields");
+      if (users.some(u => u.username === username)) return alert("Username exists");
+
+      users.push({ name, username, password, strand, grade, role: "student" });
+      saveData();
+      alert("Registered successfully");
+      showLogin();
     }
 
-    function startScanner() {
-      const scannerDiv = document.getElementById("scanner");
-      scannerDiv.innerHTML = "";
-      const html5QrCode = new Html5Qrcode("scanner");
-      html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 200 },
-        (decodedText) => {
-          html5QrCode.stop();
-          handleScan(decodedText);
-        },
-        (errorMessage) => {})
-        .catch(err => console.log("QR Scanner Error", err));
-    }
-
-    function handleScan(username) {
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const student = users.find(u => u.username === username && u.role === "student");
-      if (!student) return alert("Student not found");
-      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
-      const today = new Date().toLocaleString();
-      const lastLog = logs.reverse().find(l => l.username === username);
-      const action = lastLog && lastLog.action === "Time In" ? "Time Out" : "Time In";
-      logs.push({ username, name: student.name, action, time: today });
-      localStorage.setItem("logs", JSON.stringify(logs));
-      loadLogs();
-      alert(`${student.name} ${action} recorded.`);
-      setTimeout(() => location.reload(), 1000);
-    }
-
-    function loadLogs() {
-      logsList.innerHTML = "";
-      const logs = JSON.parse(localStorage.getItem("logs") || "[]").reverse();
-      logs.forEach(log => {
-        const entry = document.createElement("div");
-        entry.textContent = `${log.name} (${log.username}) - ${log.action} at ${log.time}`;
-        logsList.appendChild(entry);
-      });
-    }
-
-    function studentTime(type) {
-      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
-      const now = new Date().toLocaleString();
-      logs.push({ username: currentUser.username, name: currentUser.name, action: type === 'in' ? "Time In" : "Time Out", time: now });
-      localStorage.setItem("logs", JSON.stringify(logs));
-      alert(`${type === 'in' ? 'Time In' : 'Time Out'} recorded.`);
+    function login() {
+      const username = document.getElementById("loginUsername").value;
+      const password = document.getElementById("loginPassword").value;
+      const user = users.find(u => u.username === username && u.password === password);
+      if (!user) return alert("Invalid credentials");
+      localStorage.setItem("currentUser", JSON.stringify(user));
+      if (user.role === "admin") showAdmin();
+      else showStudent(user);
     }
 
     function logout() {
-      currentUser = null;
       localStorage.removeItem("currentUser");
       location.reload();
     }
 
+    function updateLogs() {
+      const logBody = document.getElementById("logBody");
+      logBody.innerHTML = "";
+      logs.forEach(log => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${log.name}</td><td>${log.strand}</td><td>${log.grade}</td><td>${log.time}</td><td>${log.status}</td>`;
+        logBody.appendChild(tr);
+      });
+    }
+
+    function startScanner() {
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            scanned => {
+              const student = users.find(u => u.username === scanned);
+              if (!student) return alert("Invalid QR");
+
+              const lastLog = logs.filter(l => l.username === scanned).pop();
+              const status = lastLog?.status === "Time In" ? "Time Out" : "Time In";
+              logs.push({
+                username: student.username,
+                name: student.name,
+                strand: student.strand,
+                grade: student.grade,
+                time: new Date().toLocaleString(),
+                status
+              });
+              saveData();
+              updateLogs();
+              alert(`${student.name} ${status} recorded.`);
+            }
+          );
+        }
+      });
+    }
+
     window.onload = () => {
-      const saved = JSON.parse(localStorage.getItem("currentUser") || "null");
-      if (saved) {
-        currentUser = saved;
-        authSection.style.display = "none";
-        saved.role === "student" ? showStudent(saved) : showAdmin(saved);
+      const current = JSON.parse(localStorage.getItem("currentUser") || "null");
+      if (current) {
+        if (current.role === "admin") showAdmin();
+        else showStudent(current);
       }
+    };
+
+    // Ensure at least 1 admin exists
+    if (!users.some(u => u.role === "admin")) {
+      users.push({ name: "Admin", username: "admin", password: "admin", role: "admin" });
+      saveData();
     }
   </script>
 </body>
