@@ -1,14 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Time In/Out System</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f2f2f2;
       padding: 20px;
+      margin: 0;
     }
+
+    h1 {
+      text-align: center;
+      font-size: 1.8em;
+    }
+
     #login, #register, #studentDashboard, #adminDashboard {
       display: none;
       background: white;
@@ -18,195 +24,40 @@
       margin: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
+
     input, select, button {
       display: block;
       width: 100%;
       margin: 10px 0;
-      padding: 8px;
+      padding: 10px;
+      font-size: 1em;
     }
+
     #qrCode canvas {
       margin-top: 20px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #scanner {
+      width: 100%;
+      max-width: 500px;
+      height: auto;
+      margin: auto;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 1.4em;
+      }
+      input, select, button {
+        font-size: 0.95em;
+        padding: 8px;
+      }
     }
   </style>
 </head>
-<body>
-
-<h1 style="text-align:center;">📚 Student Time In/Out System</h1>
-
-<div id="login">
-  <h2>Login</h2>
-  <input id="loginUser" placeholder="Username">
-  <input id="loginPass" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-  <button onclick="showRegister()">Create Account</button>
-  <button onclick="showAdmin()">Admin Login</button>
-</div>
-
-<div id="register">
-  <h2>Register</h2>
-  <input id="regName" placeholder="Full Name">
-  <input id="regUser" placeholder="Username">
-  <input id="regPass" type="password" placeholder="Password">
-  <select id="regGrade">
-    <option value="">Select Grade</option>
-    <option value="Grade 11">Grade 11</option>
-    <option value="Grade 12">Grade 12</option>
-  </select>
-  <select id="regStrand">
-    <option value="">Select Strand</option>
-    <option value="STEM">STEM</option>
-    <option value="ABM">ABM</option>
-    <option value="HUMSS">HUMSS</option>
-    <option value="GAS">GAS</option>
-    <option value="ICT">ICT</option>
-    <option value="HE">HE</option>
-  </select>
-  <button onclick="register()">Register</button>
-  <button onclick="showLogin()">Already have an account? Login</button>
-</div>
-
-<div id="studentDashboard">
-  <h2>Welcome, <span id="studentName"></span></h2>
-  <p><strong>Grade:</strong> <span id="studentGrade"></span></p>
-  <p><strong>Strand:</strong> <span id="studentStrand"></span></p>
-  <div id="qrCode"></div>
-  <button onclick="logout()">Logout</button>
-</div>
-
-<div id="adminDashboard">
-  <h2>Admin Dashboard</h2>
-  <div id="scanner" style="margin: 10px 0;"></div>
-  <div id="logList"></div>
-  <button onclick="logout()">Logout</button>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script>
-  const loginEl = document.getElementById('login');
-  const registerEl = document.getElementById('register');
-  const studentDashboard = document.getElementById('studentDashboard');
-  const adminDashboard = document.getElementById('adminDashboard');
-  const qrCodeEl = document.getElementById('qrCode');
-
-  function showLogin() {
-    loginEl.style.display = 'block';
-    registerEl.style.display = 'none';
-    studentDashboard.style.display = 'none';
-    adminDashboard.style.display = 'none';
-  }
-
-  function showRegister() {
-    loginEl.style.display = 'none';
-    registerEl.style.display = 'block';
-  }
-
-  function showStudent(user) {
-    loginEl.style.display = 'none';
-    registerEl.style.display = 'none';
-    studentDashboard.style.display = 'block';
-    document.getElementById("studentName").textContent = user.name;
-    document.getElementById("studentStrand").textContent = user.strand;
-    document.getElementById("studentGrade").textContent = user.grade;
-    qrCodeEl.innerHTML = '';
-    QRCode.toCanvas(document.createElement('canvas'), user.username, (err, canvas) => {
-      if (!err) qrCodeEl.appendChild(canvas);
-    });
-  }
-
-  function showAdmin() {
-    loginEl.style.display = 'none';
-    registerEl.style.display = 'none';
-    adminDashboard.style.display = 'block';
-    startScanner();
-    loadLogs();
-  }
-
-  function register() {
-    const name = regName.value.trim();
-    const username = regUser.value.trim();
-    const password = regPass.value;
-    const strand = regStrand.value;
-    const grade = regGrade.value;
-
-    if (!name || !username || !password || !strand || !grade) return alert("Fill in all fields.");
-
-    if (localStorage.getItem("user_" + username)) return alert("Username already taken.");
-
-    localStorage.setItem("user_" + username, JSON.stringify({
-      name, username, password, role: "student", strand, grade
-    }));
-    alert("Registered successfully. Now log in.");
-    showLogin();
-  }
-
-  function login() {
-    const username = loginUser.value.trim();
-    const password = loginPass.value;
-
-    const data = localStorage.getItem("user_" + username);
-    if (!data) return alert("User not found.");
-
-    const user = JSON.parse(data);
-    if (user.password !== password) return alert("Incorrect password.");
-
-    if (user.role === "admin") showAdmin();
-    else showStudent(user);
-
-    localStorage.setItem("currentUser", username);
-  }
-
-  function logout() {
-    localStorage.removeItem("currentUser");
-    location.reload();
-  }
-
-  function startScanner() {
-    const html5QrCode = new Html5Qrcode("scanner");
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
-        html5QrCode.start(
-          devices[0].id,
-          { fps: 10, qrbox: 250 },
-          (qrText) => {
-            const data = localStorage.getItem("user_" + qrText);
-            if (!data) return alert("User not found.");
-
-            const user = JSON.parse(data);
-            const logs = JSON.parse(localStorage.getItem("logs") || "[]");
-            const now = new Date().toLocaleString();
-            logs.push({ name: user.name, username: user.username, strand: user.strand, grade: user.grade, time: now });
-            localStorage.setItem("logs", JSON.stringify(logs));
-            alert(`Time-in/out recorded for ${user.name}`);
-            loadLogs();
-          },
-          err => {}
-        );
-      }
-    });
-  }
-
-  function loadLogs() {
-    const logs = JSON.parse(localStorage.getItem("logs") || "[]");
-    const container = document.getElementById("logList");
-    container.innerHTML = "<h3>Logs</h3>";
-    logs.reverse().forEach(log => {
-      const div = document.createElement("div");
-      div.textContent = `[${log.time}] ${log.name} (${log.grade}, ${log.strand})`;
-      container.appendChild(div);
-    });
-  }
-
-  // Setup default admin
-  if (!localStorage.getItem("user_admin")) {
-    localStorage.setItem("user_admin", JSON.stringify({
-      username: "admin",
-      password: "admin123",
-      role: "admin"
-    }));
-  }
-
-  showLogin();
-</script>
-</body>
-</html>
