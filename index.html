@@ -4,226 +4,217 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Time In/Out System</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #f4f4f4;
+      background-color: #f5f5f5;
     }
     .container {
       max-width: 500px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .card {
+      margin: 20px auto;
       background: white;
       padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 10px;
+      border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
     }
     input, select, button {
       width: 100%;
       padding: 10px;
-      margin-top: 10px;
-      margin-bottom: 20px;
-    }
-    #adminPanel, #studentPanel, #scanner, #studentLogs, #scanSuccess {
-      display: none;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
+      margin: 5px 0;
+      border-radius: 5px;
       border: 1px solid #ccc;
-      padding: 8px;
+    }
+    #scanner-container, #admin-qr-container {
+      margin-top: 20px;
       text-align: center;
     }
-    @media (max-width: 600px) {
-      .container {
-        padding: 10px;
-      }
-    }
-    #scanSuccess {
-      background-color: #d4edda;
-      color: #155724;
+    .success-animation {
+      background-color: #4caf50;
+      color: white;
+      text-align: center;
       padding: 10px;
+      margin-top: 10px;
       border-radius: 5px;
-      margin-bottom: 10px;
-      animation: fadeOut 2s forwards;
+      animation: fadeOut 2s ease-out forwards;
     }
     @keyframes fadeOut {
       0% { opacity: 1; }
       100% { opacity: 0; display: none; }
     }
+    .log-table {
+      margin-top: 20px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .log-table th, .log-table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    .log-table th {
+      background-color: #f0f0f0;
+    }
   </style>
 </head>
 <body>
-<div class="container">
-  <div class="card" id="authCard">
-    <h2>Login / Register</h2>
-    <input id="name" placeholder="Full Name" required />
-    <select id="grade">
-      <option value="Grade 11">Grade 11</option>
-      <option value="Grade 12">Grade 12</option>
-    </select>
-    <select id="strand">
-      <option value="STEM">STEM</option>
-      <option value="ABM">ABM</option>
-      <option value="HUMSS">HUMSS</option>
-      <option value="GAS">GAS</option>
-      <option value="ICT">ICT</option>
-      <option value="HE">HE</option>
-    </select>
-    <input id="password" type="password" placeholder="Password" required />
-    <button onclick="login()">Login / Register</button>
+  <div class="container" id="login-container">
+    <h2>Login</h2>
+    <input type="text" id="login-username" placeholder="Username" />
+    <input type="password" id="login-password" placeholder="Password" />
+    <button onclick="login()">Login</button>
   </div>
 
-  <div id="scanSuccess">Scan successful!</div>
-
-  <div class="card" id="studentPanel">
-    <h2 id="studentWelcome"></h2>
+  <div class="container" id="student-dashboard" style="display:none;">
+    <h2>Welcome, <span id="student-name"></span></h2>
     <button onclick="startScanner()">Scan Admin QR Code</button>
-    <div id="scanner"></div>
-    <h3>Today's Logs</h3>
-    <table id="studentLogs">
+    <div id="scanner-container" style="display:none;"></div>
+    <div id="scan-success" class="success-animation" style="display:none;">Scan successful!</div>
+    <table class="log-table" id="student-log-table" style="display:none;">
       <thead>
-        <tr><th>Time</th><th>Status</th></tr>
+        <tr>
+          <th>Time</th>
+          <th>Status</th>
+        </tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="student-log-body"></tbody>
     </table>
     <button onclick="logout()">Logout</button>
   </div>
 
-  <div class="card" id="adminPanel">
+  <div class="container" id="admin-dashboard" style="display:none;">
     <h2>Admin Dashboard</h2>
-    <div id="adminQR"></div>
-    <h3>Logs</h3>
-    <table>
+    <div id="admin-qr-container">
+      <p>Scan this QR to log student Time In/Out:</p>
+      <div id="admin-qr"></div>
+    </div>
+    <table class="log-table">
       <thead>
-        <tr><th>Name</th><th>Grade</th><th>Strand</th><th>Time</th><th>Status</th></tr>
+        <tr>
+          <th>Name</th>
+          <th>Grade</th>
+          <th>Strand</th>
+          <th>Time</th>
+          <th>Status</th>
+        </tr>
       </thead>
-      <tbody id="logs"></tbody>
+      <tbody id="admin-log-body"></tbody>
     </table>
     <button onclick="logout()">Logout</button>
   </div>
-</div>
 
-<script>
-const logs = JSON.parse(localStorage.getItem('logs')) || [];
-const users = JSON.parse(localStorage.getItem('users')) || {};
-let currentUser = null;
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script>
+    const users = [
+      { username: 'admin', password: 'admin123', isAdmin: true },
+      { username: 'juan', password: '1234', isAdmin: false, name: 'Juan Dela Cruz', grade: '11', strand: 'STEM' }
+    ];
+    const logs = [];
+    let currentUser = null;
 
-function login() {
-  const name = document.getElementById('name').value;
-  const grade = document.getElementById('grade').value;
-  const strand = document.getElementById('strand').value;
-  const password = document.getElementById('password').value;
-
-  if (name === 'admin' && password === 'admin123') {
-    currentUser = { name: 'admin' };
-    showAdmin();
-    return;
-  }
-
-  if (!users[name]) {
-    users[name] = { name, grade, strand, password, logs: [] };
-    localStorage.setItem('users', JSON.stringify(users));
-  } else if (users[name].password !== password) {
-    alert('Wrong password');
-    return;
-  }
-
-  currentUser = users[name];
-  document.getElementById('studentWelcome').textContent = `Welcome, ${name}`;
-  showStudent();
-  loadTodayLogs();
-}
-
-function logout() {
-  location.reload();
-}
-
-function showStudent() {
-  document.getElementById('authCard').style.display = 'none';
-  document.getElementById('studentPanel').style.display = 'block';
-}
-
-function showAdmin() {
-  document.getElementById('authCard').style.display = 'none';
-  document.getElementById('adminPanel').style.display = 'block';
-  generateQR();
-  renderLogs();
-}
-
-function generateQR() {
-  const adminQR = document.getElementById('adminQR');
-  adminQR.innerHTML = '';
-  new QRCode(adminQR, {
-    text: 'ADMIN_QR_CODE',
-    width: 200,
-    height: 200
-  });
-}
-
-function startScanner() {
-  const scannerDiv = document.getElementById('scanner');
-  scannerDiv.style.display = 'block';
-  const html5QrCode = new Html5Qrcode("scanner");
-  html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
-    qrCodeMessage => {
-      if (qrCodeMessage === 'ADMIN_QR_CODE') {
-        recordTime();
-        html5QrCode.stop();
-        scannerDiv.style.display = 'none';
+    function login() {
+      const user = document.getElementById('login-username').value;
+      const pass = document.getElementById('login-password').value;
+      const found = users.find(u => u.username === user && u.password === pass);
+      if (found) {
+        currentUser = found;
+        document.getElementById('login-container').style.display = 'none';
+        if (found.isAdmin) {
+          document.getElementById('admin-dashboard').style.display = 'block';
+          generateAdminQR();
+          loadAdminLogs();
+        } else {
+          document.getElementById('student-dashboard').style.display = 'block';
+          document.getElementById('student-name').innerText = found.name;
+          loadStudentLogs();
+        }
+      } else {
+        alert('Invalid credentials');
       }
-    });
-}
+    }
 
-function recordTime() {
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  const last = logs.filter(log => log.name === currentUser.name).pop();
-  const status = (!last || last.status === 'Time Out') ? 'Time In' : 'Time Out';
+    function logout() {
+      currentUser = null;
+      location.reload();
+    }
 
-  const entry = {
-    name: currentUser.name,
-    grade: currentUser.grade,
-    strand: currentUser.strand,
-    time: now.toLocaleTimeString(),
-    date: today,
-    status
-  };
-  logs.push(entry);
-  currentUser.logs.push(entry);
-  localStorage.setItem('logs', JSON.stringify(logs));
-  localStorage.setItem('users', JSON.stringify(users));
+    function generateAdminQR() {
+      const qrContainer = document.getElementById('admin-qr');
+      qrContainer.innerHTML = '';
+      new Html5Qrcode.QRCode("admin-qr", {
+        width: 200,
+        height: 200
+      }).generate("ADMIN_QR_IDENTIFIER");
+    }
 
-  document.getElementById('scanSuccess').style.display = 'block';
-  setTimeout(() => {
-    document.getElementById('scanSuccess').style.display = 'none';
-  }, 2000);
-  loadTodayLogs();
-}
+    function startScanner() {
+      const container = document.getElementById('scanner-container');
+      container.style.display = 'block';
+      const html5QrCode = new Html5Qrcode("scanner-container");
+      html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+        qrCodeMessage => {
+          if (qrCodeMessage === "ADMIN_QR_IDENTIFIER") {
+            logTime();
+            document.getElementById('scan-success').style.display = 'block';
+            setTimeout(() => {
+              document.getElementById('scan-success').style.display = 'none';
+              html5QrCode.stop();
+              container.style.display = 'none';
+            }, 2000);
+          }
+        },
+        error => {});
+    }
 
-function renderLogs() {
-  const logsBody = document.getElementById('logs');
-  logsBody.innerHTML = logs.map(log =>
-    `<tr><td>${log.name}</td><td>${log.grade}</td><td>${log.strand}</td><td>${log.time}</td><td>${log.status}</td></tr>`
-  ).join('');
-}
+    function logTime() {
+      const now = new Date();
+      const todayLogs = logs.filter(l => l.username === currentUser.username && sameDay(new Date(l.time), now));
+      const lastStatus = todayLogs.length > 0 ? todayLogs[todayLogs.length - 1].status : null;
+      const status = lastStatus === 'Time In' ? 'Time Out' : 'Time In';
+      const log = {
+        username: currentUser.username,
+        name: currentUser.name,
+        grade: currentUser.grade,
+        strand: currentUser.strand,
+        time: now,
+        status: status
+      };
+      logs.push(log);
+      loadStudentLogs();
+      loadAdminLogs();
+    }
 
-function loadTodayLogs() {
-  const tbody = document.querySelector("#studentLogs tbody");
-  const today = new Date().toISOString().split('T')[0];
-  const todayLogs = logs.filter(log => log.name === currentUser.name && log.date === today);
-  tbody.innerHTML = todayLogs.map(log =>
-    `<tr><td>${log.time}</td><td>${log.status}</td></tr>`
-  ).join('');
-}
-</script>
+    function sameDay(d1, d2) {
+      return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+    }
+
+    function loadStudentLogs() {
+      const tbody = document.getElementById('student-log-body');
+      const table = document.getElementById('student-log-table');
+      tbody.innerHTML = '';
+      const today = new Date();
+      const userLogs = logs.filter(l => l.username === currentUser.username && sameDay(new Date(l.time), today));
+      if (userLogs.length > 0) table.style.display = 'table';
+      userLogs.forEach(l => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${new Date(l.time).toLocaleTimeString()}</td><td>${l.status}</td>`;
+        tbody.appendChild(row);
+      });
+    }
+
+    function loadAdminLogs() {
+      const tbody = document.getElementById('admin-log-body');
+      tbody.innerHTML = '';
+      logs.forEach(l => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${l.name}</td><td>${l.grade}</td><td>${l.strand}</td><td>${new Date(l.time).toLocaleString()}</td><td>${l.status}</td>`;
+        tbody.appendChild(row);
+      });
+    }
+  </script>
 </body>
 </html>
