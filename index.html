@@ -4,181 +4,73 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Time In/Out System</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f4f4;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-  }
-  .container {
-    background: white;
-    padding: 20px;
-    max-width: 500px;
-    width: 100%;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  h2, h3 {
-    text-align: center;
-    margin: 0 0 10px 0;
-  }
-  input, select, button {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 1rem;
-  }
-  button {
-    background: #4CAF50;
-    color: white;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-  button:hover {
-    background: #45a049;
-  }
-  #qrCode {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-    overflow-x: auto;
-  }
-  #qrCode canvas {
-    max-width: 100%;
-    height: auto;
-  }
-  #scanner {
-    width: 100%;
-    margin-top: 20px;
-  }
-  #logsList div {
-    background: #eee;
-    margin: 5px 0;
-    padding: 8px;
-    border-radius: 4px;
-    font-size: 0.9rem;
-  }
-  @media (max-width: 600px) {
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
     .container {
-      padding: 15px;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     input, select, button {
-      font-size: 0.95rem;
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 20px;
     }
-    #logsList div {
-      font-size: 0.85rem;
+    #adminPanel, #studentPanel, #scanner, #studentLogs, #scanSuccess {
+      display: none;
     }
-  }
-<style>
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f4f4;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-  }
-  .container {
-    background: white;
-    padding: 20px;
-    max-width: 500px;
-    width: 100%;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  h2, h3 {
-    text-align: center;
-    margin: 0 0 10px 0;
-  }
-  input, select, button {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 1rem;
-  }
-  button {
-    background: #4CAF50;
-    color: white;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-  button:hover {
-    background: #45a049;
-  }
-  #qrCode {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-    overflow-x: auto;
-  }
-  #qrCode canvas {
-    max-width: 100%;
-    height: auto;
-  }
-  #scanner {
-    width: 100%;
-    margin-top: 20px;
-  }
-  #logsList div {
-    background: #eee;
-    margin: 5px 0;
-    padding: 8px;
-    border-radius: 4px;
-    font-size: 0.9rem;
-  }
-  @media (max-width: 600px) {
-    .container {
-      padding: 15px;
+    table {
+      width: 100%;
+      border-collapse: collapse;
     }
-    input, select, button {
-      font-size: 0.95rem;
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
     }
-    #logsList div {
-      font-size: 0.85rem;
+    @media (max-width: 600px) {
+      .container {
+        padding: 10px;
+      }
     }
-  }
-</style>
+    #scanSuccess {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      animation: fadeOut 2s forwards;
+    }
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; display: none; }
+    }
+  </style>
 </head>
 <body>
-  <div class="container" id="loginContainer">
-    <h2>Login</h2>
-    <input type="text" id="loginUsername" placeholder="Username" />
-    <input type="password" id="loginPassword" placeholder="Password" />
-    <button onclick="login()">Login</button>
-    <p>or <a href="#" onclick="showRegister()">Register here</a></p>
-  </div>
-
-  <div class="container" id="registerContainer" style="display: none">
-    <h2>Register</h2>
-    <input type="text" id="regName" placeholder="Full Name" />
-    <input type="text" id="regUsername" placeholder="Username" />
-    <input type="password" id="regPassword" placeholder="Password" />
-    <select id="regGrade">
+<div class="container">
+  <div class="card" id="authCard">
+    <h2>Login / Register</h2>
+    <input id="name" placeholder="Full Name" required />
+    <select id="grade">
       <option value="Grade 11">Grade 11</option>
       <option value="Grade 12">Grade 12</option>
     </select>
-    <select id="regStrand">
+    <select id="strand">
       <option value="STEM">STEM</option>
       <option value="ABM">ABM</option>
       <option value="HUMSS">HUMSS</option>
@@ -186,153 +78,152 @@
       <option value="ICT">ICT</option>
       <option value="HE">HE</option>
     </select>
-    <button onclick="register()">Register</button>
-    <p><a href="#" onclick="showLogin()">Back to Login</a></p>
+    <input id="password" type="password" placeholder="Password" required />
+    <button onclick="login()">Login / Register</button>
   </div>
 
-  <div class="container" id="adminContainer" style="display: none">
-    <h2>Admin Panel</h2>
-    <button onclick="startScanner()">Start QR Scanner</button>
-    <div id="qr-reader" style="width:100%"></div>
-    <h3>Logs</h3>
-    <table id="logTable">
+  <div id="scanSuccess">Scan successful!</div>
+
+  <div class="card" id="studentPanel">
+    <h2 id="studentWelcome"></h2>
+    <button onclick="startScanner()">Scan Admin QR Code</button>
+    <div id="scanner"></div>
+    <h3>Today's Logs</h3>
+    <table id="studentLogs">
       <thead>
-        <tr>
-          <th>Name</th>
-          <th>Strand</th>
-          <th>Grade</th>
-          <th>Time</th>
-          <th>Status</th>
-        </tr>
+        <tr><th>Time</th><th>Status</th></tr>
       </thead>
-      <tbody id="logBody"></tbody>
+      <tbody></tbody>
     </table>
     <button onclick="logout()">Logout</button>
   </div>
 
-  <div class="container" id="studentContainer" style="display: none">
-    <h2>Welcome, Student</h2>
-    <p id="studentInfo"></p>
-    <p>To time in/out, please scan the admin QR.</p>
+  <div class="card" id="adminPanel">
+    <h2>Admin Dashboard</h2>
+    <div id="adminQR"></div>
+    <h3>Logs</h3>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Grade</th><th>Strand</th><th>Time</th><th>Status</th></tr>
+      </thead>
+      <tbody id="logs"></tbody>
+    </table>
     <button onclick="logout()">Logout</button>
   </div>
+</div>
 
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <script>
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+<script>
+const logs = JSON.parse(localStorage.getItem('logs')) || [];
+const users = JSON.parse(localStorage.getItem('users')) || {};
+let currentUser = null;
 
-    function saveData() {
-      localStorage.setItem("users", JSON.stringify(users));
-      localStorage.setItem("logs", JSON.stringify(logs));
-    }
+function login() {
+  const name = document.getElementById('name').value;
+  const grade = document.getElementById('grade').value;
+  const strand = document.getElementById('strand').value;
+  const password = document.getElementById('password').value;
 
-    function showLogin() {
-      document.getElementById("loginContainer").style.display = "block";
-      document.getElementById("registerContainer").style.display = "none";
-    }
+  if (name === 'admin' && password === 'admin123') {
+    currentUser = { name: 'admin' };
+    showAdmin();
+    return;
+  }
 
-    function showRegister() {
-      document.getElementById("loginContainer").style.display = "none";
-      document.getElementById("registerContainer").style.display = "block";
-    }
+  if (!users[name]) {
+    users[name] = { name, grade, strand, password, logs: [] };
+    localStorage.setItem('users', JSON.stringify(users));
+  } else if (users[name].password !== password) {
+    alert('Wrong password');
+    return;
+  }
 
-    function showAdmin() {
-      document.getElementById("loginContainer").style.display = "none";
-      document.getElementById("adminContainer").style.display = "block";
-      document.getElementById("registerContainer").style.display = "none";
-      updateLogs();
-    }
+  currentUser = users[name];
+  document.getElementById('studentWelcome').textContent = `Welcome, ${name}`;
+  showStudent();
+  loadTodayLogs();
+}
 
-    function showStudent(user) {
-      document.getElementById("loginContainer").style.display = "none";
-      document.getElementById("studentContainer").style.display = "block";
-      document.getElementById("studentInfo").innerText = `${user.name} - ${user.strand} - ${user.grade}`;
-    }
+function logout() {
+  location.reload();
+}
 
-    function register() {
-      const name = document.getElementById("regName").value;
-      const username = document.getElementById("regUsername").value;
-      const password = document.getElementById("regPassword").value;
-      const strand = document.getElementById("regStrand").value;
-      const grade = document.getElementById("regGrade").value;
-      if (!name || !username || !password) return alert("Complete all fields");
-      if (users.some(u => u.username === username)) return alert("Username exists");
+function showStudent() {
+  document.getElementById('authCard').style.display = 'none';
+  document.getElementById('studentPanel').style.display = 'block';
+}
 
-      users.push({ name, username, password, strand, grade, role: "student" });
-      saveData();
-      alert("Registered successfully");
-      showLogin();
-    }
+function showAdmin() {
+  document.getElementById('authCard').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+  generateQR();
+  renderLogs();
+}
 
-    function login() {
-      const username = document.getElementById("loginUsername").value;
-      const password = document.getElementById("loginPassword").value;
-      const user = users.find(u => u.username === username && u.password === password);
-      if (!user) return alert("Invalid credentials");
-      localStorage.setItem("currentUser", JSON.stringify(user));
-      if (user.role === "admin") showAdmin();
-      else showStudent(user);
-    }
+function generateQR() {
+  const adminQR = document.getElementById('adminQR');
+  adminQR.innerHTML = '';
+  new QRCode(adminQR, {
+    text: 'ADMIN_QR_CODE',
+    width: 200,
+    height: 200
+  });
+}
 
-    function logout() {
-      localStorage.removeItem("currentUser");
-      location.reload();
-    }
-
-    function updateLogs() {
-      const logBody = document.getElementById("logBody");
-      logBody.innerHTML = "";
-      logs.forEach(log => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${log.name}</td><td>${log.strand}</td><td>${log.grade}</td><td>${log.time}</td><td>${log.status}</td>`;
-        logBody.appendChild(tr);
-      });
-    }
-
-    function startScanner() {
-      const html5QrCode = new Html5Qrcode("qr-reader");
-      Html5Qrcode.getCameras().then(devices => {
-        if (devices && devices.length) {
-          html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: 250 },
-            scanned => {
-              const student = users.find(u => u.username === scanned);
-              if (!student) return alert("Invalid QR");
-
-              const lastLog = logs.filter(l => l.username === scanned).pop();
-              const status = lastLog?.status === "Time In" ? "Time Out" : "Time In";
-              logs.push({
-                username: student.username,
-                name: student.name,
-                strand: student.strand,
-                grade: student.grade,
-                time: new Date().toLocaleString(),
-                status
-              });
-              saveData();
-              updateLogs();
-              alert(`${student.name} ${status} recorded.`);
-            }
-          );
-        }
-      });
-    }
-
-    window.onload = () => {
-      const current = JSON.parse(localStorage.getItem("currentUser") || "null");
-      if (current) {
-        if (current.role === "admin") showAdmin();
-        else showStudent(current);
+function startScanner() {
+  const scannerDiv = document.getElementById('scanner');
+  scannerDiv.style.display = 'block';
+  const html5QrCode = new Html5Qrcode("scanner");
+  html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+    qrCodeMessage => {
+      if (qrCodeMessage === 'ADMIN_QR_CODE') {
+        recordTime();
+        html5QrCode.stop();
+        scannerDiv.style.display = 'none';
       }
-    };
+    });
+}
 
-    // Ensure at least 1 admin exists
-    if (!users.some(u => u.role === "admin")) {
-      users.push({ name: "Admin", username: "admin", password: "admin", role: "admin" });
-      saveData();
-    }
-  </script>
+function recordTime() {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const last = logs.filter(log => log.name === currentUser.name).pop();
+  const status = (!last || last.status === 'Time Out') ? 'Time In' : 'Time Out';
+
+  const entry = {
+    name: currentUser.name,
+    grade: currentUser.grade,
+    strand: currentUser.strand,
+    time: now.toLocaleTimeString(),
+    date: today,
+    status
+  };
+  logs.push(entry);
+  currentUser.logs.push(entry);
+  localStorage.setItem('logs', JSON.stringify(logs));
+  localStorage.setItem('users', JSON.stringify(users));
+
+  document.getElementById('scanSuccess').style.display = 'block';
+  setTimeout(() => {
+    document.getElementById('scanSuccess').style.display = 'none';
+  }, 2000);
+  loadTodayLogs();
+}
+
+function renderLogs() {
+  const logsBody = document.getElementById('logs');
+  logsBody.innerHTML = logs.map(log =>
+    `<tr><td>${log.name}</td><td>${log.grade}</td><td>${log.strand}</td><td>${log.time}</td><td>${log.status}</td></tr>`
+  ).join('');
+}
+
+function loadTodayLogs() {
+  const tbody = document.querySelector("#studentLogs tbody");
+  const today = new Date().toISOString().split('T')[0];
+  const todayLogs = logs.filter(log => log.name === currentUser.name && log.date === today);
+  tbody.innerHTML = todayLogs.map(log =>
+    `<tr><td>${log.time}</td><td>${log.status}</td></tr>`
+  ).join('');
+}
+</script>
 </body>
 </html>
