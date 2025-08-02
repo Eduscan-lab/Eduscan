@@ -3,207 +3,237 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Student Time In/Out System</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode"></script>
+  <title>Student Attendance System</title>
   <style>
     * { box-sizing: border-box; }
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
       background: #f4f4f4;
-      margin: 0;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       min-height: 100vh;
       padding: 20px;
     }
     .container {
       background: white;
       padding: 20px;
-      border-radius: 10px;
       max-width: 500px;
       width: 100%;
+      border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 10px;
     }
     h2, h3 {
       text-align: center;
-      margin-bottom: 10px;
+      margin: 0 0 10px 0;
     }
     input, select, button {
       width: 100%;
       padding: 10px;
-      font-size: 1rem;
-      border-radius: 5px;
       border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
     }
     button {
-      background-color: #4CAF50;
+      background: #4CAF50;
       color: white;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: background 0.3s ease;
     }
-    button:hover {
-      background-color: #45a049;
-    }
-    #qrCode canvas {
-      display: block;
-      margin: 0 auto;
-      max-width: 100%;
-    }
+    button:hover { background: #45a049; }
+    #scanner { width: 100%; margin-top: 20px; }
     #logsList div {
       background: #eee;
+      margin: 5px 0;
       padding: 8px;
-      margin-top: 5px;
       border-radius: 4px;
+      font-size: 0.9rem;
     }
     @media (max-width: 600px) {
-      .container {
-        padding: 15px;
-      }
+      .container { padding: 15px; }
+      input, select, button { font-size: 0.95rem; }
+      #logsList div { font-size: 0.85rem; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Student Attendance System</h2>
-
-    <div id="registerSection">
+    <div id="authSection">
       <h3>Register</h3>
-      <input id="regName" type="text" placeholder="Full Name" />
-      <select id="regStrand">
-        <option value="">Select Strand</option>
-        <option value="STEM">STEM</option>
-        <option value="ABM">ABM</option>
-        <option value="HUMSS">HUMSS</option>
-        <option value="GAS">GAS</option>
-        <option value="ICT">ICT</option>
-        <option value="HE">HE</option>
-      </select>
+      <input id="regName" placeholder="Full Name">
       <select id="regGrade">
-        <option value="">Select Grade</option>
-        <option value="11">Grade 11</option>
-        <option value="12">Grade 12</option>
+        <option disabled selected>Grade</option>
+        <option>11</option>
+        <option>12</option>
       </select>
-      <input id="regUsername" type="text" placeholder="Username" />
-      <input id="regPassword" type="password" placeholder="Password" />
+      <select id="regStrand">
+        <option disabled selected>Strand</option>
+        <option>STEM</option>
+        <option>ABM</option>
+        <option>HUMSS</option>
+        <option>GAS</option>
+        <option>ICT</option>
+        <option>HE</option>
+      </select>
+      <input id="regUser" placeholder="Username">
+      <input id="regPass" placeholder="Password" type="password">
+      <select id="regRole">
+        <option value="student">Student</option>
+        <option value="admin">Admin</option>
+      </select>
       <button onclick="register()">Register</button>
-    </div>
 
-    <div id="loginSection">
       <h3>Login</h3>
-      <input id="loginUsername" type="text" placeholder="Username" />
-      <input id="loginPassword" type="password" placeholder="Password" />
+      <input id="loginUser" placeholder="Username">
+      <input id="loginPass" placeholder="Password" type="password">
       <button onclick="login()">Login</button>
     </div>
 
-    <div id="studentSection" style="display: none;">
+    <div id="studentSection" style="display:none">
       <h3>Welcome, <span id="studentName"></span></h3>
-      <p>Strand: <span id="studentStrand"></span></p>
       <p>Grade: <span id="studentGrade"></span></p>
-      <div id="qrCode"></div>
-      <button onclick="logTime('in')">Time In</button>
-      <button onclick="logTime('out')">Time Out</button>
+      <p>Strand: <span id="studentStrand"></span></p>
+      <button onclick="studentTime('in')">Time In</button>
+      <button onclick="studentTime('out')">Time Out</button>
       <button onclick="logout()">Logout</button>
     </div>
 
-    <div id="adminLink">
-      <p style="text-align: center;">
-        <a href="#" onclick="goToAdmin()">Admin Login</a>
-      </p>
-    </div>
-
-    <div id="adminSection" style="display: none;">
+    <div id="adminSection" style="display:none">
       <h3>Admin Panel</h3>
-      <input id="adminPass" type="password" placeholder="Admin Password" />
-      <button onclick="adminLogin()">Enter Admin</button>
+      <div id="qrCode"></div>
+      <div id="scanner"></div>
+      <h4>Logs</h4>
       <div id="logsList"></div>
+      <button onclick="logout()">Logout</button>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script>
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+    const authSection = document.getElementById("authSection");
+    const studentSection = document.getElementById("studentSection");
+    const adminSection = document.getElementById("adminSection");
+    const qrCodeDiv = document.getElementById("qrCode");
+    const logsList = document.getElementById("logsList");
+    let currentUser = null;
 
     function register() {
-      const name = document.getElementById("regName").value.trim();
-      const strand = document.getElementById("regStrand").value;
+      const name = document.getElementById("regName").value;
       const grade = document.getElementById("regGrade").value;
-      const username = document.getElementById("regUsername").value.trim();
-      const password = document.getElementById("regPassword").value;
+      const strand = document.getElementById("regStrand").value;
+      const username = document.getElementById("regUser").value;
+      const password = document.getElementById("regPass").value;
+      const role = document.getElementById("regRole").value;
 
-      if (!name || !strand || !grade || !username || !password) return alert("Please complete all fields.");
-      if (users.find(u => u.username === username)) return alert("Username already taken.");
+      if (!name || !grade || !strand || !username || !password || !role) return alert("Please fill all fields");
 
-      const user = { name, strand, grade, username, password, role: "student" };
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      if (users.find(u => u.username === username)) return alert("Username already exists");
+
+      const user = { name, grade, strand, username, password, role };
       users.push(user);
       localStorage.setItem("users", JSON.stringify(users));
-      localStorage.setItem("currentUser", JSON.stringify(user));
-
-      showStudent(user);
+      alert("Registered successfully");
     }
 
     function login() {
-      const username = document.getElementById("loginUsername").value.trim();
-      const password = document.getElementById("loginPassword").value;
+      const username = document.getElementById("loginUser").value;
+      const password = document.getElementById("loginPass").value;
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
       const user = users.find(u => u.username === username && u.password === password);
+
       if (!user) return alert("Invalid credentials");
+
+      currentUser = user;
       localStorage.setItem("currentUser", JSON.stringify(user));
-      showStudent(user);
+      authSection.style.display = "none";
+      if (user.role === "student") showStudent(user);
+      else showAdmin(user);
     }
 
     function showStudent(user) {
-      document.getElementById("registerSection").style.display = "none";
-      document.getElementById("loginSection").style.display = "none";
-      document.getElementById("adminLink").style.display = "none";
-      document.getElementById("studentSection").style.display = "block";
+      studentSection.style.display = "block";
       document.getElementById("studentName").textContent = user.name;
-      document.getElementById("studentStrand").textContent = user.strand;
       document.getElementById("studentGrade").textContent = user.grade;
-      generateQR(user.username);
+      document.getElementById("studentStrand").textContent = user.strand;
     }
 
-    function generateQR(data) {
-      document.getElementById("qrCode").innerHTML = "";
-      QRCode.toCanvas(document.createElement("canvas"), data, (err, canvas) => {
-        if (err) return console.error(err);
-        document.getElementById("qrCode").appendChild(canvas);
+    function showAdmin(user) {
+      adminSection.style.display = "block";
+      qrCodeDiv.innerHTML = "";
+      QRCode.toCanvas(document.createElement("canvas"), user.username, function(err, canvas) {
+        if (!err) qrCodeDiv.appendChild(canvas);
+      });
+      loadLogs();
+      startScanner();
+    }
+
+    function startScanner() {
+      const scannerDiv = document.getElementById("scanner");
+      scannerDiv.innerHTML = "";
+      const html5QrCode = new Html5Qrcode("scanner");
+      html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 200 },
+        (decodedText) => {
+          html5QrCode.stop();
+          handleScan(decodedText);
+        },
+        (errorMessage) => {})
+        .catch(err => console.log("QR Scanner Error", err));
+    }
+
+    function handleScan(username) {
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const student = users.find(u => u.username === username && u.role === "student");
+      if (!student) return alert("Student not found");
+      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+      const today = new Date().toLocaleString();
+      const lastLog = logs.reverse().find(l => l.username === username);
+      const action = lastLog && lastLog.action === "Time In" ? "Time Out" : "Time In";
+      logs.push({ username, name: student.name, action, time: today });
+      localStorage.setItem("logs", JSON.stringify(logs));
+      loadLogs();
+      alert(`${student.name} ${action} recorded.`);
+      setTimeout(() => location.reload(), 1000);
+    }
+
+    function loadLogs() {
+      logsList.innerHTML = "";
+      const logs = JSON.parse(localStorage.getItem("logs") || "[]").reverse();
+      logs.forEach(log => {
+        const entry = document.createElement("div");
+        entry.textContent = `${log.name} (${log.username}) - ${log.action} at ${log.time}`;
+        logsList.appendChild(entry);
       });
     }
 
-    function logTime(type) {
-      const user = JSON.parse(localStorage.getItem("currentUser"));
+    function studentTime(type) {
+      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
       const now = new Date().toLocaleString();
-      logs.push({ name: user.name, username: user.username, type, time: now });
+      logs.push({ username: currentUser.username, name: currentUser.name, action: type === 'in' ? "Time In" : "Time Out", time: now });
       localStorage.setItem("logs", JSON.stringify(logs));
-      alert(`${type === "in" ? "Time In" : "Time Out"} recorded.`);
+      alert(`${type === 'in' ? 'Time In' : 'Time Out'} recorded.`);
     }
 
     function logout() {
+      currentUser = null;
       localStorage.removeItem("currentUser");
       location.reload();
     }
 
-    function goToAdmin() {
-      document.getElementById("registerSection").style.display = "none";
-      document.getElementById("loginSection").style.display = "none";
-      document.getElementById("adminLink").style.display = "none";
-      document.getElementById("adminSection").style.display = "block";
+    window.onload = () => {
+      const saved = JSON.parse(localStorage.getItem("currentUser") || "null");
+      if (saved) {
+        currentUser = saved;
+        authSection.style.display = "none";
+        saved.role === "student" ? showStudent(saved) : showAdmin(saved);
+      }
     }
-
-    function adminLogin() {
-      const pass = document.getElementById("adminPass").value;
-      if (pass !== "admin123") return alert("Wrong admin password");
-      document.getElementById("logsList").innerHTML = logs.map(log =>
-        `<div><strong>${log.name}</strong> - ${log.type.toUpperCase()} @ ${log.time}</div>`
-      ).join("");
-    }
-
-    // Auto-load user if already logged in
-    const current = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (current && current.role === "student") showStudent(current);
   </script>
 </body>
 </html>
