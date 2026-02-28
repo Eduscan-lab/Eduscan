@@ -136,7 +136,25 @@
         }
       });
     }
+function startScanner(user) {
+  const scanner = new Html5Qrcode("scanner");
+  scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, content => {
+    if (content === "ADMIN_QR_IDENTIFIER") {
+      const now = new Date();
 
+      // Ask student what they want to log
+      const choice = confirm("Do you want to TIME IN?\nPress OK for Time In, Cancel for Time Out.");
+
+      const status = choice ? "Time In" : "Time Out";
+
+      logs.push({ user: user.username, grade: user.grade, strand: user.strand, time: now, status });
+
+      showSuccess();
+      showStudentLogs(user);
+      updateAdminLog();
+    }
+  });
+}
     function showSuccess() {
       const anim = document.getElementById("success-animation");
       anim.style.display = "block";
@@ -179,3 +197,4 @@
   </script>
 </body>
 </html>
+
