@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Attendance - Admin QR Scan</title>
+<title>QR Attendance System</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
@@ -15,6 +15,7 @@
   button:hover{ background:#45a049; }
   #scannerSection{text-align:center;margin:20px 0;}
   #scanner{width:100%; max-width:400px; margin:0 auto;}
+  #adminQR{width:200px; height:200px; margin:0 auto; display:block; border:3px solid #333; display:flex; justify-content:center; align-items:center; font-weight:bold; font-size:16px; }
   #logs{margin-top:20px; overflow-x:auto;}
   table{width:100%; border-collapse:collapse; margin-top:10px;}
   th,td{border:1px solid #ddd; padding:12px; text-align:left;}
@@ -26,21 +27,27 @@
   .timein-btn{background:#4CAF50; color:white;}
   .timeout-btn{background:#f44336; color:white;}
   .close-btn{background:#999; color:white;}
-  @media screen and (max-width:600px){ input, select { width:95%; } }
+  @media screen and (max-width:600px){ input, select { width:95%; } #adminQR{width:150px;height:150px;font-size:14px;} }
 </style>
 </head>
 <body>
 <div class="container">
 <h1>QR Attendance System</h1>
 
-<!-- Student Login -->
+<!-- Login Form -->
 <div id="loginForm">
   <input type="text" id="username" placeholder="Username"><br>
   <input type="password" id="password" placeholder="Password"><br>
-  <button onclick="studentLogin()">Login</button>
+  <button onclick="login()">Login</button>
 </div>
 
-<!-- Scanner -->
+<!-- Admin QR -->
+<div id="adminSection" style="display:none;">
+  <h2>Admin QR (Students scan this)</h2>
+  <div id="adminQR">ADMIN QR</div>
+</div>
+
+<!-- Student Scanner -->
 <div id="scannerSection" style="display:none;">
   <h2>Scan Admin QR to Log Attendance</h2>
   <div id="scanner"></div>
@@ -81,87 +88,95 @@
 </div>
 
 <script>
-  const accounts = [
-    { username: "TEST", password: "TEST1", grade:"11", strand:"STEM" }
-  ];
-  const ADMIN_QR = "ADMIN_QR_IDENTIFIER"; // the QR content students scan
-  let currentStudent = null;
-  let logs = [];
-  let pendingStatus = null;
+const accounts=[
+  {username:"ADMIN", password:"ADMIN123", type:"admin"},
+  {username:"TEST", password:"TEST1", type:"student", grade:"11", strand:"STEM"}
+];
+const ADMIN_QR="ADMIN_QR"; // QR content that students scan
 
-  function studentLogin(){
-    const u = document.getElementById("username").value;
-    const p = document.getElementById("password").value;
-    const acc = accounts.find(a=>a.username===u && a.password===p);
-    if(!acc){ alert("Invalid credentials"); return; }
-    currentStudent = acc;
-    alert("Welcome "+acc.username);
-    document.getElementById("loginForm").style.display="none";
+let currentUser=null;
+let logs=[];
+let pendingStatus=null;
+
+function login(){
+  const u=document.getElementById("username").value;
+  const p=document.getElementById("password").value;
+  const acc=accounts.find(a=>a.username===u && a.password===p);
+  if(!acc){ alert("Invalid credentials"); return; }
+  currentUser=acc;
+  alert("Welcome "+acc.username);
+  document.getElementById("loginForm").style.display="none";
+  document.getElementById("logs").style.display="block";
+  document.getElementById("filters").style.display="block";
+  populateFilterDropdown();
+
+  if(acc.type==="admin"){
+    document.getElementById("adminSection").style.display="block";
+  } else {
     document.getElementById("scannerSection").style.display="block";
-    document.getElementById("logs").style.display="block";
-    document.getElementById("filters").style.display="block";
-    populateFilterDropdown();
     startScanner();
   }
+}
 
-  function startScanner(){
-    const scanner = new Html5Qrcode("scanner");
-    scanner.start({facingMode:"environment"},{fps:10, qrbox:250},
-      content=>{
-        if(content===ADMIN_QR){
-          openModal();
-        }else{
-          alert("Invalid QR. Please scan Admin QR.");
-        }
-      }).catch(err=>console.error(err));
-  }
+// Student Scanner
+function startScanner(){
+  const scanner = new Html5Qrcode("scanner");
+  scanner.start({facingMode:"environment"},{fps:10, qrbox:250},
+    content=>{
+      if(content===ADMIN_QR){
+        openModal();
+      } else { alert("Invalid QR. Please scan Admin QR."); }
+    }).catch(err=>console.error(err));
+}
 
-  // Modal
-  function openModal(){ document.getElementById("confirmationModal").style.display="block"; }
-  function closeModal(){ document.getElementById("confirmationModal").style.display="none"; pendingStatus=null; }
-  function confirmTime(status){ pendingStatus=status; logAttendance(); closeModal(); }
+// Modal functions
+function openModal(){ document.getElementById("confirmationModal").style.display="block"; }
+function closeModal(){ document.getElementById("confirmationModal").style.display="none"; pendingStatus=null; }
+function confirmTime(status){ pendingStatus=status; logAttendance(); closeModal(); }
 
-  // Log attendance
-  function logAttendance(){
-    if(!pendingStatus) return;
-    const lastLog = logs[logs.length-1];
-    if(lastLog && lastLog.user===currentStudent.username && lastLog.status===pendingStatus){
-      alert("Cannot log same status consecutively!"); return;
-    }
-    logs.push({user:currentStudent.username, grade:currentStudent.grade, strand:currentStudent.strand, time:new Date(), status:pendingStatus});
-    showLogs();
-    pendingStatus=null;
+// Log Attendance
+function logAttendance(){
+  if(!pendingStatus) return;
+  const lastLog=logs[logs.length-1];
+  if(lastLog && lastLog.user===currentUser.username && lastLog.status===pendingStatus){
+    alert("Cannot log same status consecutively!"); return;
   }
+  logs.push({user:currentUser.username, grade:currentUser.grade, strand:currentUser.strand, time:new Date(), status:pendingStatus});
+  showLogs();
+  pendingStatus=null;
+}
 
-  // Show logs
-  function showLogs(filtered=null){
-    const t = document.getElementById("logTableBody"); t.innerHTML="";
-    const display = filtered||logs;
-    display.forEach(l=>{
-      const tr = document.createElement("tr");
-      tr.className = l.status==="Time In"?"time-in":"time-out";
-      tr.innerHTML=`<td>${l.user}</td><td>${l.grade}</td><td>${l.strand}</td><td>${l.time.toLocaleString()}</td><td>${l.status}</td>`;
-      t.appendChild(tr);
-    });
-  }
+// Show logs
+function showLogs(filtered=null){
+  const t=document.getElementById("logTableBody"); t.innerHTML="";
+  const display=filtered||logs;
+  display.forEach(l=>{
+    const tr=document.createElement("tr");
+    tr.className=l.status==="Time In"?"time-in":"time-out";
+    tr.innerHTML=`<td>${l.user}</td><td>${l.grade||""}</td><td>${l.strand||""}</td><td>${l.time.toLocaleString()}</td><td>${l.status}</td>`;
+    t.appendChild(tr);
+  });
+}
 
-  // Filters
-  function populateFilterDropdown(){
-    const f = document.getElementById("filterStudent");
-    f.innerHTML='<option value="">All Students</option>';
-    accounts.forEach(s=>{ const o=document.createElement("option"); o.value=s.username; o.text=s.username; f.appendChild(o); });
-  }
-  function applyFilters(){
-    const s=document.getElementById("filterStudent").value;
-    const d=document.getElementById("filterDate").value;
-    const filtered=logs.filter(l=>{
-      let matchS = s?l.user===s:true;
-      let matchD = d?l.time.toISOString().split("T")[0]===d:true;
-      return matchS && matchD;
-    });
-    showLogs(filtered);
-  }
-  function resetFilters(){ document.getElementById("filterStudent").value=""; document.getElementById("filterDate").value=""; showLogs(); }
+// Filters
+function populateFilterDropdown(){
+  const f=document.getElementById("filterStudent");
+  f.innerHTML='<option value="">All Students</option>';
+  accounts.filter(a=>a.type==="student").forEach(s=>{
+    const o=document.createElement("option"); o.value=s.username; o.text=s.username; f.appendChild(o);
+  });
+}
+function applyFilters(){
+  const s=document.getElementById("filterStudent").value;
+  const d=document.getElementById("filterDate").value;
+  const filtered=logs.filter(l=>{
+    let matchS = s?l.user===s:true;
+    let matchD = d?l.time.toISOString().split("T")[0]===d:true;
+    return matchS && matchD;
+  });
+  showLogs(filtered);
+}
+function resetFilters(){ document.getElementById("filterStudent").value=""; document.getElementById("filterDate").value=""; showLogs(); }
 
 </script>
 </body>
