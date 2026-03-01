@@ -1,182 +1,323 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QR Attendance System</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <style>
-  body { font-family:'Roboto',sans-serif; background:linear-gradient(to right,#74ebd5,#ACB6E5); margin:0; padding:0; color:#333; }
-  .container { max-width:900px; margin:20px auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.2); }
-  h1,h2{text-align:center;}
-  input, select, button { width:80%; max-width:300px; padding:10px; margin:8px 0; border-radius:8px; border:1px solid #ccc; font-size:16px; }
-  button { background:#4CAF50; color:white; border:none; cursor:pointer; transition:0.3s; }
-  button:hover{ background:#45a049; }
-  #scannerSection{text-align:center;margin:20px 0;}
-  #scanner{width:100%; max-width:400px; margin:0 auto;}
-  #adminQR{width:200px; height:200px; margin:0 auto; display:block; border:3px solid #333; display:flex; justify-content:center; align-items:center; font-weight:bold; font-size:16px; }
-  #logs{margin-top:20px; overflow-x:auto;}
-  table{width:100%; border-collapse:collapse; margin-top:10px;}
-  th,td{border:1px solid #ddd; padding:12px; text-align:left;}
-  th{background-color:#f4f4f4;}
-  .time-in{background-color:#c8e6c9;}
-  .time-out{background-color:#ffcdd2;}
-  .modal{display:none;position:fixed; z-index:999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.4);}
-  .modal-content{background:#fff; margin:20% auto; padding:20px; border-radius:10px; width:300px; text-align:center; box-shadow:0 8px 20px rgba(0,0,0,0.3);}
-  .timein-btn{background:#4CAF50; color:white;}
-  .timeout-btn{background:#f44336; color:white;}
-  .close-btn{background:#999; color:white;}
-  @media screen and (max-width:600px){ input, select { width:95%; } #adminQR{width:150px;height:150px;font-size:14px;} }
+body{
+    font-family: Arial, sans-serif;
+    margin:0;
+    background:linear-gradient(to right,#74ebd5,#ACB6E5);
+}
+.container{
+    max-width:1000px;
+    margin:20px auto;
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+h1,h2{text-align:center;}
+input,select,button{
+    padding:10px;
+    margin:8px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    font-size:16px;
+}
+button{
+    background:#4CAF50;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+button:hover{background:#388E3C;}
+#scanner{max-width:400px;margin:auto;}
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+th,td{
+    border:1px solid #ddd;
+    padding:10px;
+    text-align:center;
+}
+th{background:#f4f4f4;}
+.time-in{background:#c8e6c9;}
+.time-out{background:#ffcdd2;}
+
+.card-container{
+    display:flex;
+    flex-wrap:wrap;
+    gap:15px;
+    justify-content:center;
+    margin-top:20px;
+}
+.card{
+    flex:1 1 200px;
+    background:linear-gradient(135deg,#4CAF50,#2e7d32);
+    color:white;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+    box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+.card p{
+    font-size:28px;
+    font-weight:bold;
+    margin:10px 0 0;
+}
+
+.modal{
+    display:none;
+    position:fixed;
+    left:0;top:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.4);
+}
+.modal-content{
+    background:white;
+    width:300px;
+    margin:20% auto;
+    padding:20px;
+    border-radius:10px;
+    text-align:center;
+}
+@media(max-width:600px){
+    .card-container{flex-direction:column;}
+}
 </style>
 </head>
+
 <body>
 <div class="container">
+
 <h1>QR Attendance System</h1>
 
-<!-- Login Form -->
-<div id="loginForm">
-  <input type="text" id="username" placeholder="Username"><br>
-  <input type="password" id="password" placeholder="Password"><br>
-  <button onclick="login()">Login</button>
+<!-- LOGIN -->
+<div id="loginSection">
+    <input type="text" id="username" placeholder="Username"><br>
+    <input type="password" id="password" placeholder="Password"><br>
+    <button onclick="login()">Login</button>
 </div>
 
-<!-- Admin QR -->
+<!-- ADMIN SECTION -->
 <div id="adminSection" style="display:none;">
-  <h2>Admin QR (Students scan this)</h2>
-  <div id="adminQR">ADMIN QR</div>
+    <h2>Admin QR</h2>
+    <div id="adminQR"></div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard">
+        <h2>Dashboard</h2>
+        <div class="card-container">
+            <div class="card">
+                <h3>Total Logs Today</h3>
+                <p id="totalLogs">0</p>
+            </div>
+            <div class="card">
+                <h3>Time In</h3>
+                <p id="totalIn">0</p>
+            </div>
+            <div class="card">
+                <h3>Time Out</h3>
+                <p id="totalOut">0</p>
+            </div>
+            <div class="card">
+                <h3>Unique Students</h3>
+                <p id="uniqueStudents">0</p>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Student Scanner -->
-<div id="scannerSection" style="display:none;">
-  <h2>Scan Admin QR to Log Attendance</h2>
-  <div id="scanner"></div>
+<!-- STUDENT SECTION -->
+<div id="studentSection" style="display:none;">
+    <h2>Scan Admin QR</h2>
+    <div id="scanner"></div>
 </div>
 
-<!-- Filters -->
+<!-- FILTERS -->
 <div id="filters" style="display:none;text-align:center;">
-  <h2>Filter Logs</h2>
-  <select id="filterStudent">
-    <option value="">All Students</option>
-  </select>
-  <input type="date" id="filterDate">
-  <button onclick="applyFilters()">Apply Filters</button>
-  <button onclick="resetFilters()">Reset Filters</button>
+    <h2>Filter Logs</h2>
+    <select id="filterStudent">
+        <option value="">All Students</option>
+    </select>
+    <input type="date" id="filterDate">
+    <button onclick="applyFilters()">Apply</button>
+    <button onclick="resetFilters()">Reset</button>
 </div>
 
-<!-- Logs Table -->
-<div id="logs" style="display:none;">
-  <table>
-    <thead>
-      <tr>
-        <th>Student</th><th>Grade</th><th>Strand</th><th>Time</th><th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="logTableBody"></tbody>
-  </table>
-</div>
+<!-- LOG TABLE -->
+<div id="logSection" style="display:none;">
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Grade</th>
+<th>Strand</th>
+<th>Date & Time</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="logBody"></tbody>
+</table>
 </div>
 
-<!-- Modal -->
-<div id="confirmationModal" class="modal">
-  <div class="modal-content">
-    <h3>Choose Status</h3>
-    <button class="timein-btn" onclick="confirmTime('Time In')">Time In</button>
-    <button class="timeout-btn" onclick="confirmTime('Time Out')">Time Out</button><br>
-    <button class="close-btn" onclick="closeModal()">Cancel</button>
-  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="statusModal">
+<div class="modal-content">
+<h3>Select Status</h3>
+<button onclick="confirmStatus('Time In')">Time In</button>
+<button onclick="confirmStatus('Time Out')">Time Out</button><br><br>
+<button onclick="closeModal()">Cancel</button>
+</div>
 </div>
 
 <script>
-const accounts=[
-  {username:"ADMIN", password:"ADMIN123", type:"admin"},
-  {username:"TEST", password:"TEST1", type:"student", grade:"11", strand:"STEM"}
+
+const ADMIN_QR_VALUE = "ADMIN_ACTIVE_SESSION";
+
+const accounts = [
+    {username:"ADMIN", password:"ADMIN123", type:"admin"},
+    {username:"TEST", password:"TEST1", type:"student", grade:"11", strand:"STEM"}
 ];
-const ADMIN_QR="ADMIN_QR"; // QR content that students scan
 
-let currentUser=null;
-let logs=[];
-let pendingStatus=null;
+let currentUser = null;
+let logs = [];
+let selectedStatus = null;
 
+/* LOGIN */
 function login(){
-  const u=document.getElementById("username").value;
-  const p=document.getElementById("password").value;
-  const acc=accounts.find(a=>a.username===u && a.password===p);
-  if(!acc){ alert("Invalid credentials"); return; }
-  currentUser=acc;
-  alert("Welcome "+acc.username);
-  document.getElementById("loginForm").style.display="none";
-  document.getElementById("logs").style.display="block";
-  document.getElementById("filters").style.display="block";
-  populateFilterDropdown();
+    const u = username.value;
+    const p = password.value;
+    const acc = accounts.find(a=>a.username===u && a.password===p);
+    if(!acc){ alert("Invalid login"); return; }
 
-  if(acc.type==="admin"){
-    document.getElementById("adminSection").style.display="block";
-  } else {
-    document.getElementById("scannerSection").style.display="block";
-    startScanner();
-  }
+    currentUser = acc;
+    loginSection.style.display="none";
+    filters.style.display="block";
+    logSection.style.display="block";
+    populateFilter();
+
+    if(acc.type==="admin"){
+        adminSection.style.display="block";
+        generateQR();
+    }else{
+        studentSection.style.display="block";
+        startScanner();
+    }
 }
 
-// Student Scanner
+/* GENERATE ADMIN QR */
+function generateQR(){
+    adminQR.innerHTML="";
+    new QRCode(adminQR,{
+        text: ADMIN_QR_VALUE,
+        width:200,
+        height:200
+    });
+}
+
+/* STUDENT SCANNER */
 function startScanner(){
-  const scanner = new Html5Qrcode("scanner");
-  scanner.start({facingMode:"environment"},{fps:10, qrbox:250},
-    content=>{
-      if(content===ADMIN_QR){
-        openModal();
-      } else { alert("Invalid QR. Please scan Admin QR."); }
-    }).catch(err=>console.error(err));
+    const scanner = new Html5Qrcode("scanner");
+    scanner.start(
+        {facingMode:"environment"},
+        {fps:10, qrbox:250},
+        (decoded)=>{
+            if(decoded===ADMIN_QR_VALUE){
+                openModal();
+            }else{
+                alert("Invalid QR");
+            }
+        }
+    );
 }
 
-// Modal functions
-function openModal(){ document.getElementById("confirmationModal").style.display="block"; }
-function closeModal(){ document.getElementById("confirmationModal").style.display="none"; pendingStatus=null; }
-function confirmTime(status){ pendingStatus=status; logAttendance(); closeModal(); }
+/* MODAL */
+function openModal(){ statusModal.style.display="block"; }
+function closeModal(){ statusModal.style.display="none"; }
+function confirmStatus(status){
+    selectedStatus=status;
+    closeModal();
+    logAttendance();
+}
 
-// Log Attendance
+/* LOG ATTENDANCE */
 function logAttendance(){
-  if(!pendingStatus) return;
-  const lastLog=logs[logs.length-1];
-  if(lastLog && lastLog.user===currentUser.username && lastLog.status===pendingStatus){
-    alert("Cannot log same status consecutively!"); return;
-  }
-  logs.push({user:currentUser.username, grade:currentUser.grade, strand:currentUser.strand, time:new Date(), status:pendingStatus});
-  showLogs();
-  pendingStatus=null;
+    logs.push({
+        name:currentUser.username,
+        grade:currentUser.grade||"",
+        strand:currentUser.strand||"",
+        datetime:new Date(),
+        status:selectedStatus
+    });
+    displayLogs();
+    updateDashboard();
 }
 
-// Show logs
-function showLogs(filtered=null){
-  const t=document.getElementById("logTableBody"); t.innerHTML="";
-  const display=filtered||logs;
-  display.forEach(l=>{
-    const tr=document.createElement("tr");
-    tr.className=l.status==="Time In"?"time-in":"time-out";
-    tr.innerHTML=`<td>${l.user}</td><td>${l.grade||""}</td><td>${l.strand||""}</td><td>${l.time.toLocaleString()}</td><td>${l.status}</td>`;
-    t.appendChild(tr);
-  });
+/* DISPLAY LOGS */
+function displayLogs(filtered=null){
+    logBody.innerHTML="";
+    const data = filtered||logs;
+    data.forEach(l=>{
+        const row=document.createElement("tr");
+        row.className=l.status==="Time In"?"time-in":"time-out";
+        row.innerHTML=`
+            <td>${l.name}</td>
+            <td>${l.grade}</td>
+            <td>${l.strand}</td>
+            <td>${l.datetime.toLocaleString()}</td>
+            <td>${l.status}</td>
+        `;
+        logBody.appendChild(row);
+    });
 }
 
-// Filters
-function populateFilterDropdown(){
-  const f=document.getElementById("filterStudent");
-  f.innerHTML='<option value="">All Students</option>';
-  accounts.filter(a=>a.type==="student").forEach(s=>{
-    const o=document.createElement("option"); o.value=s.username; o.text=s.username; f.appendChild(o);
-  });
+/* DASHBOARD */
+function updateDashboard(){
+    const today=new Date().toISOString().split("T")[0];
+    const todayLogs=logs.filter(l=>l.datetime.toISOString().split("T")[0]===today);
+
+    totalLogs.innerText=todayLogs.length;
+    totalIn.innerText=todayLogs.filter(l=>l.status==="Time In").length;
+    totalOut.innerText=todayLogs.filter(l=>l.status==="Time Out").length;
+    uniqueStudents.innerText=new Set(todayLogs.map(l=>l.name)).size;
+}
+
+/* FILTERS */
+function populateFilter(){
+    filterStudent.innerHTML='<option value="">All Students</option>';
+    accounts.filter(a=>a.type==="student").forEach(s=>{
+        const opt=document.createElement("option");
+        opt.value=s.username;
+        opt.text=s.username;
+        filterStudent.appendChild(opt);
+    });
 }
 function applyFilters(){
-  const s=document.getElementById("filterStudent").value;
-  const d=document.getElementById("filterDate").value;
-  const filtered=logs.filter(l=>{
-    let matchS = s?l.user===s:true;
-    let matchD = d?l.time.toISOString().split("T")[0]===d:true;
-    return matchS && matchD;
-  });
-  showLogs(filtered);
+    const s=filterStudent.value;
+    const d=filterDate.value;
+    const filtered=logs.filter(l=>{
+        const matchS=s?l.name===s:true;
+        const matchD=d?l.datetime.toISOString().split("T")[0]===d:true;
+        return matchS&&matchD;
+    });
+    displayLogs(filtered);
 }
-function resetFilters(){ document.getElementById("filterStudent").value=""; document.getElementById("filterDate").value=""; showLogs(); }
+function resetFilters(){
+    filterStudent.value="";
+    filterDate.value="";
+    displayLogs();
+}
 
 </script>
 </body>
